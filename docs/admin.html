@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#4a0a54" />
+<title>ห้องทำงาน — ONLIVE QUIZ</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2361116c'/><text x='50' y='72' font-size='58' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>Q</text></svg>" />
+<link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body class="theme-admin">
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">⚡</div>
+      <div class="brand-name">Onlive Quiz</div>
+    </div>
+    <span class="pill hidden" id="who"></span>
+    <div class="spacer"></div>
+    <a class="btn btn-sm btn-ghost" href="index.html">หน้าแรก</a>
+    <button class="btn btn-sm btn-ghost" id="btn-logout">ออกจากระบบ</button>
+  </div>
+
+  <section class="screen on" id="s-loading">
+    <div class="card tc"><div class="loader"></div></div>
+  </section>
+
+  <!-- ============ รายการชุดคำถาม ============ -->
+  <section class="screen" id="s-list">
+    <div class="row-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px">
+      <div>
+        <h1 style="font-size:26px">ชุดคำถามของฉัน</h1>
+        <p class="muted small" style="margin-top:4px">สร้าง / แก้ไข / ลบชุดคำถาม · นำเข้าจาก <b>Excel / CSV / JSON</b> · ห้องที่กำลังเล่นจะล็อกการแก้ไขไว้เพื่อป้องกันเกมเสีย</p>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-danger" id="btn-clear-data" type="button">ล้างข้อมูลของฉัน</button>
+        <button class="btn btn-ghost" id="btn-import-open">นำเข้าคำถาม</button>
+        <button class="btn btn-primary" id="btn-new">+ สร้างชุดใหม่</button>
+      </div>
+    </div>
+    <!-- ห้องที่เปิดอยู่: เข้าห้อง / ปิด / ลบ / ตั้งค่าการเข้าห้องกลางเกม ได้จากที่นี่ -->
+    <section class="live-rooms-panel hidden" id="live-rooms-panel" aria-labelledby="live-rooms-heading">
+      <div class="live-rooms-head">
+        <div>
+          <h2 class="card-title" id="live-rooms-heading">ห้องที่เปิดอยู่</h2>
+          <p class="tiny muted" style="margin-top:4px">จัดการห้องได้ทันที — เข้าห้อง · ปิดห้อง · ลบห้อง · เปิด–ปิดการเข้าห้องกลางเกม</p>
+        </div>
+        <button class="btn btn-sm btn-ghost" id="btn-refresh-rooms" type="button">รีเฟรช</button>
+      </div>
+      <div id="live-rooms" class="col" style="gap:10px"></div>
+    </section>
+    <div id="quiz-list" class="grid grid-3"></div>
+  </section>
+
+  <!-- ============ แก้ไขชุดคำถาม ============ -->
+  <section class="screen" id="s-editor">
+    <div class="row-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px">
+      <button class="btn btn-sm btn-ghost" id="btn-back">← กลับ</button>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-sm btn-danger hidden" id="btn-delete-quiz">ลบชุดนี้</button>
+        <button class="btn btn-primary" id="btn-save">บันทึก</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="grid grid-3" style="gap:14px">
+        <label class="field" style="margin:0"><span>ชื่อชุดคำถาม</span>
+          <input id="quiz-title" placeholder="เช่น ความรู้ความปลอดภัยในการทำงาน" />
+        </label>
+        <label class="field" style="margin:0"><span>คำอธิบาย (ไม่บังคับ)</span>
+          <input id="quiz-desc" placeholder="ใช้ในหัวข้อใด / กลุ่มเป้าหมาย" />
+        </label>
+        <label class="field" style="margin:0"><span>จำนวนผู้เล่นสูงสุด (0 = ไม่จำกัด)</span>
+          <input id="quiz-max-players" type="number" min="0" max="120" step="1" value="0" inputmode="numeric" />
+          <small class="muted">กำหนดได้ 1–120 คน หรือใส่ 0 เพื่อไม่จำกัดเพิ่มต่อชุด (ทุกห้องรวมกันยังจำกัด 120 คนเพื่อเผื่อโควตา Free)</small>
+        </label>
+      </div>
+      <div style="margin-top:14px">
+        <span class="tiny muted">ไอคอน</span>
+        <div class="emoji-row" id="emoji-row" style="margin-top:7px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">คำถาม <span class="muted small" id="q-count"></span></div>
+        <div class="row" style="gap:8px">
+          <button class="btn btn-sm btn-ghost" id="btn-import-q">นำเข้าไฟล์</button>
+          <button class="btn btn-sm btn-primary" id="btn-add-q">+ เพิ่มข้อ</button>
+        </div>
+      </div>
+      <div class="col" id="q-list" style="gap:12px"></div>
+      <p class="tiny muted" style="margin-top:14px">เลือกวงกลมสีเขียวหน้าตัวเลือกที่ถูก · รองรับ 2–6 ตัวเลือกต่อข้อ</p>
+      <div class="editor-actions">
+        <button class="btn btn-primary btn-lg" id="btn-save2">บันทึกชุดคำถาม</button>
+        <button class="btn btn-dark btn-lg" id="btn-play">บันทึก &amp; เปิดห้องเล่นสด</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ นำเข้า ============ -->
+  <section class="screen" id="s-import">
+    <div class="row-between" style="margin-bottom:16px">
+      <button class="btn btn-sm btn-ghost" id="btn-import-back">← กลับ</button>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">นำเข้าคำถามจาก Excel</div>
+        <div class="row" style="gap:8px; flex-wrap:wrap">
+          <button class="btn btn-sm btn-primary" id="btn-template-xlsx">⬇ ดาวน์โหลดเทมเพลท Excel (.xlsx)</button>
+          <button class="btn btn-sm btn-ghost" id="btn-template">เทมเพลท CSV</button>
+        </div>
+      </div>
+
+      <p class="import-steps" style="margin-bottom:12px">
+        <b>วิธีใช้ 3 ขั้น:</b> ① ดาวน์โหลดเทมเพลท Excel ② กรอกคำถามในชีต “คำถาม” (แถวละ 1 ข้อ) ③ ลากไฟล์มาวางด้านล่างเป็นอันเสร็จ
+      </p>
+
+      <div class="tabs" style="margin-bottom:14px; max-width:380px">
+        <button data-tab="csv" class="on">Excel / CSV</button>
+        <button data-tab="json">JSON</button>
+      </div>
+
+      <div id="tab-csv">
+        <div class="xlsx-hint" style="margin:0 0 8px">
+          <span class="chip-file">.xlsx</span>
+          <span class="chip-file">.xls</span>
+          <span class="chip-file">.csv</span>
+          <span class="chip-file">.tsv</span>
+        </div>
+        <p class="import-steps">
+          คอลัมน์ที่รองรับ: <code>question</code> (หรือ <code>คำถาม</code>), <code>option1…option6</code> (หรือ <code>ตัวเลือก1…6</code>),
+          <code>correct</code> (เลขข้อ 1–6 หรือ A–F หรือข้อความตัวเลือกนั้น), <code>time_limit</code>, <code>points</code>, <code>image_url</code><br />
+          เปิดไฟล์ Excel ได้ทันที — ระบบอ่าน <b>ชีตแรกที่มีข้อมูล</b> และข้ามแถวว่างให้เอง
+        </p>
+      </div>
+      <div id="tab-json" class="hidden">
+        <p class="muted small" style="line-height:1.7; margin-bottom:10px">
+          รูปแบบ: <code>[{"prompt":"…","options":["ก","ข","ค","ง"],"correct_index":0,"time_limit":20,"points":1000}]</code>
+        </p>
+      </div>
+
+      <div class="dropzone" id="dropzone" style="margin:14px 0">
+        <div><b>ลากไฟล์มาวางที่นี่</b> หรือ
+          <label for="import-file" style="text-decoration:underline; cursor:pointer; color:var(--purple)">เลือกไฟล์จากเครื่อง</label>
+        </div>
+        <div class="tiny" style="margin-top:6px">Excel · CSV · TSV · JSON — ไม่ต้องแก้รูปแบบถ้าใช้เทมเพลท</div>
+        <input type="file" id="import-file" accept=".xlsx,.xls,.xlsm,.csv,.tsv,.txt,.json" style="display:none" />
+      </div>
+
+      <div id="file-info" class="tiny" style="margin:-4px 0 10px"></div>
+
+      <label class="field"><span>หรือวางข้อมูลที่นี่</span>
+        <textarea id="import-text" rows="9" placeholder="วาง CSV / TSV / JSON… (หรือเลือกไฟล์ Excel ด้านบน)"
+          style="font-family:ui-monospace,Menlo,monospace; font-size:13px; font-weight:500"></textarea>
+      </label>
+
+      <div class="row" style="gap:10px; flex-wrap:wrap">
+        <button class="btn btn-primary" id="btn-import-run">อ่านข้อมูล</button>
+        <a class="btn btn-ghost" href="samples/quiz-template.xlsx" download>ดาวน์โหลดไฟล์เทมเพลท (.xlsx)</a>
+      </div>
+
+      <div id="import-result" style="margin-top:16px"></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal hidden" id="clear-data-modal" role="dialog" aria-modal="true" aria-labelledby="clear-data-title">
+  <div class="modal-card auth-card" style="border:2px solid #c9314b">
+    <h2 class="card-title" id="clear-data-title" style="color:#b3213c">ล้างข้อมูลของฉันทั้งหมด</h2>
+    <p class="small" style="line-height:1.65;margin:10px 0">ระบบจะลบชุดคำถาม ห้องทั้งหมด รวมถึงผู้เล่น คะแนน และคำตอบที่เป็นของบัญชีนี้อย่างถาวร ข้อมูลของเจ้าของคนอื่นจะไม่ถูกลบ และไม่สามารถกู้คืนได้</p>
+    <label class="field"><span>รหัสผ่านบัญชีผู้จัด</span>
+      <input id="clear-data-password" type="password" autocomplete="current-password" placeholder="รหัสผ่าน" />
+    </label>
+    <label class="field"><span>พิมพ์คำว่า <b>ลบข้อมูลของฉัน</b> เพื่อยืนยัน</span>
+      <input id="clear-data-confirm" type="text" autocomplete="off" placeholder="ลบข้อมูลของฉัน" />
+    </label>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:14px">
+      <button class="btn btn-ghost" id="btn-clear-cancel" type="button">ยกเลิก</button>
+      <button class="btn btn-danger" id="btn-clear-confirm" type="button" disabled>ยืนยันการลบถาวร</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/vendor/supabase.js"></script>
+<script src="assets/js/vendor/xlsx.mini.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/util.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/sound.js"></script>
+<script src="assets/js/page-admin.js"></script>
+</body>
+</html>
