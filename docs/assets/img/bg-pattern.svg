@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <!-- ลายเรขาคณิตโทนเข้ม (อ้างอิงสัดส่วนจากเว็บตัวอย่าง) -->
+  <polygon points="-120,-140 620,-140 -120,430" fill="#3f0848"/>
+  <polygon points="1120,-200 1760,-200 1760,300" fill="#3f0848"/>
+  <circle cx="1340" cy="1010" r="430" fill="#3f0848"/>
+  <circle cx="150" cy="1080" r="300" fill="#3f0848"/>
+  <polygon points="1600,420 1980,900 1220,900" fill="#3f0848"/>
+  <rect x="700" y="700" width="240" height="240" rx="20" fill="#3f0848" transform="rotate(22 820 820)" opacity=".55"/>
+</svg>

@@ -1,0 +1,13 @@
+node_modules/
+.DS_Store
+*.log
+
+# Vercel
+.vercel/
+.env
+.env.local
+.env*.local
+
+# ไฟล์ส่วนตัว / สำรองข้อมูล
+*.zip
+*.bak

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#4a0a54" />
+<title>ห้องผู้จัด — ONLIVE QUIZ</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2361116c'/><text x='50' y='72' font-size='58' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>Q</text></svg>" />
+<link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body class="theme-host">
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">⚡</div>
+      <div class="brand-name">Onlive Quiz</div>
+    </div>
+    <span class="pill pill-live hidden" id="top-status"></span>
+    <div class="spacer"></div>
+    <span class="small hidden" id="top-quiz" style="font-weight:800; opacity:.8"></span>
+    <span class="pin-chip hidden" id="top-pin"></span>
+    <button class="auto-chip hidden" id="btn-auto-top" type="button" title="เปิด–ปิดการเล่นอัตโนมัติ"></button>
+    <a class="btn btn-sm btn-ghost" href="admin.html">ห้องทำงาน</a>
+    <div class="quick-audio" title="เปิด–ปิดเพลงพื้นหลัง / เอฟเฟค">
+      <button id="btn-music" type="button" aria-label="เพลงพื้นหลัง"></button>
+      <button id="btn-fx" type="button" aria-label="เอฟเฟคเสียง"></button>
+    </div>
+    <!-- ปุ่ม "เสียงและเพลง" (sound.js) จะถูกแทรกตรงนี้ ข้างปุ่มออก -->
+    <button class="btn btn-sm btn-ghost hidden" id="btn-logout">ออกจากระบบ</button>
+  </div>
+
+  <section class="screen on" id="s-loading">
+    <div class="card tc"><div class="loader"></div><p class="muted small" style="margin-top:12px">กำลังโหลดห้อง…</p></div>
+  </section>
+
+  <!-- ============ เลือกชุดคำถาม ============ -->
+  <section class="screen" id="s-pick">
+    <div class="row-between" style="margin-bottom:14px">
+      <div class="qcard" style="padding:12px 20px">
+        <div class="card-title">เลือกชุดคำถามเพื่อเปิดห้อง</div>
+      </div>
+      <a class="btn btn-ghost" href="admin.html">จัดการคำถาม</a>
+    </div>
+    <div id="pick-list" class="grid grid-2"></div>
+  </section>
+
+  <!-- ============ ห้องรอ: ซ้าย = ผู้เข้าร่วม · ขวา = ข้อมูลเข้าห้อง + ตั้งค่า ============ -->
+  <section class="screen" id="s-lobby">
+    <div class="lobby-hero">
+
+      <!-- ซ้าย: ผู้เข้าร่วม (ให้ผู้เล่นค้นหาชื่อ/ตัวละครของตัวเองได้ชัด ๆ) -->
+      <section class="players-panel" aria-labelledby="players-heading">
+        <div class="row-between players-head">
+          <div class="players-heading-wrap">
+            <span class="pill pill-live"><i class="dot"></i> รอผู้เข้าร่วม</span>
+            <h2 class="card-title" id="players-heading">ผู้เข้าร่วม</h2>
+            <p class="players-sub">ค้นหาชื่อและตัวละครของคุณบนจอนี้</p>
+          </div>
+          <span class="pill pill-count" id="lobby-count" aria-live="polite">0 คน</span>
+        </div>
+        <div class="players-grid empty" id="players" role="list" aria-live="polite" aria-relevant="additions removals">ยังไม่มีใครเข้าห้อง — แชร์ PIN ให้ผู้เข้าอบรม</div>
+      </section>
+
+      <!-- ขวา: QR / PIN / ลิงก์ / ตั้งค่าการเล่น -->
+      <aside class="lobby-side" aria-label="ข้อมูลสำหรับเข้าร่วมห้อง">
+        <div class="lobby-side-head">
+          <span class="lobby-side-title">เข้าร่วมห้อง</span>
+          <span class="tiny" id="lobby-quiz"></span>
+        </div>
+
+        <button class="qr" id="qr" type="button" aria-label="ขยาย QR Code" aria-controls="qr-modal" aria-expanded="false" title="กดเพื่อขยาย QR Code"></button>
+        <div class="qr-zoom-hint">สแกน QR หรือเปิดลิงก์ · <b>กดที่ QR เพื่อขยาย</b></div>
+
+        <div class="qr-pin">
+          <span>GAME PIN</span>
+          <b id="qr-pin">------</b>
+        </div>
+        <div class="joinurl" id="joinurl"></div>
+
+        <div class="lobby-actions">
+          <button class="btn btn-sm btn-ghost" id="btn-copy" type="button">คัดลอกลิงก์</button>
+          <button class="btn btn-sm btn-ghost" id="btn-open" type="button">เปิดจอผู้เล่น</button>
+        </div>
+
+        <button class="btn btn-hero btn-lg btn-block" id="btn-start">เริ่มเกม →</button>
+
+        <div class="lobby-controls">
+          <div class="ctl">
+            <span class="ctl-label">โหมดเล่น</span>
+            <div class="seg" id="seg-auto">
+              <button type="button" data-auto="0" class="on">กดเอง</button>
+              <button type="button" data-auto="1">▶ เล่นอัตโนมัติ</button>
+            </div>
+          </div>
+          <div class="ctl auto-only hidden" id="auto-opts">
+            <span class="ctl-label">ค้างหน้าเฉลย</span>
+            <select id="sel-reveal-sec" class="ctl-select" aria-label="เวลาค้างหน้าเฉลย">
+              <option value="3">3 วิ</option><option value="5">5 วิ</option><option value="6">6 วิ</option>
+              <option value="8">8 วิ</option><option value="10">10 วิ</option><option value="15">15 วิ</option>
+            </select>
+            <span class="ctl-label">หน้าอันดับ</span>
+            <select id="sel-lb-sec" class="ctl-select" aria-label="เวลาค้างหน้าอันดับ">
+              <option value="0">ข้าม</option><option value="3">3 วิ</option><option value="5">5 วิ</option>
+              <option value="7">7 วิ</option><option value="10">10 วิ</option>
+            </select>
+          </div>
+          <div class="ctl">
+            <span class="ctl-label">ตัวเลือกบนจอ</span>
+            <div class="seg" id="seg-show">
+              <button type="button" data-mode="text" class="on">ข้อความ + สี</button>
+              <button type="button" data-mode="shape">สัญลักษณ์สีเท่านั้น</button>
+            </div>
+          </div>
+          <label class="switch"><input type="checkbox" id="chk-late" /> อนุญาตให้เข้าห้องกลางเกม</label>
+          <p class="tiny lobby-note"><span id="auto-note"></span> <span id="seg-note"></span></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ กำลังถาม ============ -->
+  <section class="screen" id="s-question">
+    <div class="stage-head">
+      <span class="pill" id="q-idx">ข้อ 1</span>
+      <div class="timer-big" id="host-timer">20</div>
+    </div>
+    <div class="progress"><i id="answered-bar"></i></div>
+    <div class="qcard">
+      <div class="host-prompt" id="h-prompt">…</div>
+    </div>
+    <div class="host-answers" id="h-answers"></div>
+    <span class="answered-bar"><b id="answered-n">0</b> คนตอบแล้ว</span>
+    <div class="footbar">
+      <button class="btn btn-hero btn-lg" id="btn-reveal">เฉลยเลย</button>
+      <label class="switch" id="lbl-chk-auto"><input type="checkbox" id="chk-auto" checked /> เฉลยอัตโนมัติเมื่อหมดเวลา</label>
+      <div class="spacer"></div>
+      <span class="tiny" id="q-points"></span>
+    </div>
+  </section>
+
+  <!-- ============ เฉลย ============ -->
+  <section class="screen" id="s-reveal">
+    <div class="grid" style="grid-template-columns:1.35fr .65fr" id="reveal-grid">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title" id="r-title">เฉลย</div>
+          <span class="pill" id="r-count"></span>
+        </div>
+        <div class="host-prompt" id="r-prompt" style="margin-bottom:16px; font-size:clamp(19px,2.4vw,26px)"></div>
+        <div class="host-answers" id="r-answers"></div>
+        <p class="tiny hidden" id="r-mode-note" style="margin-top:10px; font-weight:800; color:var(--muted)"></p>
+        <div class="footbar">
+          <button class="btn btn-primary btn-lg" id="btn-next">ข้อต่อไป →</button>
+          <button class="btn btn-lg" id="btn-lb">กระดานคะแนน</button>
+          <div class="spacer"></div>
+          <span class="tiny muted" id="r-stat"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">สัดส่วนคำตอบ</div></div>
+        <div class="bars" id="r-bars"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ กระดานคะแนน ============ -->
+  <section class="screen" id="s-lb">
+    <div class="lb-stage">
+      <div class="lb-head">
+        <div class="lb-title">🏆 กระดานคะแนน <span id="lb-sub"></span></div>
+        <span class="pill" id="lb-count"></span>
+      </div>
+      <div class="lb-race" id="h-lb"></div>
+      <div class="footbar">
+        <button class="btn btn-hero btn-lg" id="btn-next2">ข้อต่อไป →</button>
+        <button class="btn btn-lg btn-ghost" id="btn-finish">จบเกม</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ จบเกม ============ -->
+  <section class="screen" id="s-ended">
+    <div class="end-hero">
+      <div id="end-podium"></div>
+    </div>
+    <div class="card end-card" id="end-card">
+      <div class="card-head">
+        <div class="card-title">จบเกม — สรุปอันดับ</div>
+        <span class="pill" id="end-total"></span>
+      </div>
+      <div class="res-list end-cols" id="end-lb"></div>
+      <div class="footbar">
+        <a class="btn btn-primary btn-lg" href="admin.html">กลับห้องทำงาน</a>
+        <button class="btn btn-lg" id="btn-again">เล่นชุดนี้อีกครั้ง</button>
+        <button class="btn btn-lg btn-ghost" id="btn-restart-same">เริ่มรอบใหม่ในห้องเดิม (ผู้เล่นไม่ต้องสแกนใหม่)</button>
+        <div class="spacer"></div>
+        <button class="btn btn-lg btn-ghost" id="btn-fireworks" type="button">🎆 จุดพลุอีกครั้ง</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- QR ขยายเต็มหน้าจอ: แยกจาก .wrap เพื่อไม่ให้ stacking context / layout ของเวทีบัง overlay -->
+<div class="qr-modal hidden" id="qr-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="QR Code สำหรับเข้าห้อง" tabindex="-1">
+  <div class="qr-modal-card">
+    <button class="qr-modal-close" id="qr-modal-close" type="button" aria-label="ปิดหน้าต่าง QR">✕</button>
+    <div class="qr-modal-title">สแกนเพื่อเข้าร่วม</div>
+    <div class="qr-modal-code" id="qr-modal-code"></div>
+    <div class="qr-modal-pin"><span>GAME PIN</span><b id="qr-modal-pin">------</b></div>
+    <div class="qr-modal-url" id="qr-modal-url"></div>
+  </div>
+</div>
+
+<!-- แถบนับถอยหลังของโหมดเล่นอัตโนมัติ -->
+<div class="auto-bar hidden" id="auto-bar">
+  <div class="auto-bar-fill" id="auto-bar-fill"></div>
+  <span class="auto-bar-text" id="auto-bar-text"></span>
+  <button class="auto-bar-btn" id="auto-bar-pause" type="button">⏸ หยุดอัตโนมัติ</button>
+</div>
+
+<script src="assets/js/vendor/supabase.js"></script>
+<script src="assets/js/vendor/qrcode.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/util.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/sound.js"></script>
+<script src="assets/js/avatars.js"></script>
+<script src="assets/js/fx.js"></script>
+<script src="assets/js/podium.js"></script>
+<script src="assets/js/page-host.js"></script>
+</body>
+</html>
